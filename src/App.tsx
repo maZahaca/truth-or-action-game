@@ -5,6 +5,7 @@ import { useShake } from './hooks/useShake';
 import { useTimer } from './hooks/useTimer';
 
 type Screen = 'start' | 'game' | 'end';
+type EndReason = 'exit' | 'cards_exhausted';
 
 interface PlayerScore {
   name: string;
@@ -21,6 +22,7 @@ function App() {
   const [scores, setScores] = useState<PlayerScore[]>([]);
   const [cardAnimClass, setCardAnimClass] = useState('');
   const [cardRevealed, setCardRevealed] = useState(false);
+  const [endReason, setEndReason] = useState<EndReason>('cards_exhausted');
 
   const timer = useTimer(30);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +30,7 @@ function App() {
   const drawCard = useCallback(() => {
     const result = getRandomCard(usedIndices);
     if (!result) {
+      setEndReason('cards_exhausted');
       setScreen('end');
       return;
     }
@@ -96,12 +99,21 @@ function App() {
 
     // Check if all cards used
     if (usedIndices.size >= allCards.length) {
+      setEndReason('cards_exhausted');
       setScreen('end');
     }
   };
 
   const handleSkip = () => {
     nextTurn();
+  };
+
+  const exitGame = () => {
+    timer.stop();
+    setCurrentCard(null);
+    setCardRevealed(false);
+    setEndReason('exit');
+    setScreen('end');
   };
 
   const resetGame = () => {
@@ -265,7 +277,7 @@ function App() {
                 </div>
               </>
             )}
-            <button className="btn-back" onClick={resetGame}>
+            <button className="btn-back" onClick={exitGame}>
               Выйти
             </button>
           </div>
@@ -276,17 +288,26 @@ function App() {
         <div className="end-screen">
           <div className="trophy">🏆</div>
           <h2>Игра окончена!</h2>
-          <p>Карточки закончились. Вот результаты:</p>
+          <p>
+            {endReason === 'cards_exhausted'
+              ? 'Карточки закончились. Вот результаты:'
+              : 'Вот результаты:'}
+          </p>
 
           <div className="scores">
-            {[...scores]
-              .sort((a, b) => b.score - a.score)
-              .map((s) => (
-                <div className="score-row" key={s.name}>
-                  <span>{s.name}</span>
+            {(() => {
+              const sorted = [...scores].sort((a, b) => b.score - a.score);
+              const topScore = sorted[0]?.score ?? 0;
+              return sorted.map((s, i) => (
+                <div
+                  className={`score-row${i === 0 && topScore > 0 ? ' winner' : ''}`}
+                  key={s.name}
+                >
+                  <span>{i === 0 && topScore > 0 ? `👑 ${s.name}` : s.name}</span>
                   <span className="score-points">{s.score} очк.</span>
                 </div>
-              ))}
+              ));
+            })()}
           </div>
 
           <button className="start-btn" onClick={resetGame}>

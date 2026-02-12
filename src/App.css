@@ -399,6 +399,12 @@
   font-size: 1.05rem;
 }
 
+.score-row.winner {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 180, 0, 0.2) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  font-weight: 700;
+}
+
 .score-row .score-points {
   font-weight: 700;
 }
